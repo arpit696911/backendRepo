@@ -1,32 +1,18 @@
 import os
-import smtplib
-import ssl
-from email.message import EmailMessage
-from dotenv import load_dotenv
+import resend
 
-load_dotenv()
-
-EMAIL_USER = os.getenv("EMAIL_USER")
-EMAIL_PASS = os.getenv("EMAIL_PASS")
+resend.api_key = os.getenv("RESEND_API_KEY")
 
 def send_email(recipient: str, summary: str) -> None:
+    """
+    Send the AI-generated summary using the Resend email API.
+    """
+    if not resend.api_key:
+        raise RuntimeError("RESEND_API_KEY not set in environment variables")
 
-    if not EMAIL_USER or not EMAIL_PASS:
-        raise RuntimeError(
-            "EMAIL_USER and/or EMAIL_PASS not set."
-        )
-
-    smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
-    smtp_port = int(os.getenv("SMTP_PORT", "465"))
-
-    msg = EmailMessage()
-    msg["Subject"] = "Sales Insight Automator - Analysis Summary"
-    msg["From"] = EMAIL_USER
-    msg["To"] = recipient
-    msg.set_content(summary)
-
-    context = ssl.create_default_context()
-
-    with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context) as server:
-        server.login(EMAIL_USER, EMAIL_PASS)
-        server.send_message(msg)
+    resend.Emails.send({
+        "from": "onboarding@resend.dev",
+        "to": [recipient],
+        "subject": "Sales Insight Automator - Analysis Summary",
+        "html": f"<pre>{summary}</pre>"
+    })
